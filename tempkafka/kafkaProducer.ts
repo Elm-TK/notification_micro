@@ -40,4 +40,4 @@ const sendMessage = async (chatId: string, text: string) => {
 };
 
 // Пример отправки сообщения
-sendMessage('2026620172', 'САСАТЬ');
+sendMessage('2026620172', 'Отправление');
