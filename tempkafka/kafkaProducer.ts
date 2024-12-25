@@ -1,5 +1,6 @@
-import { Kafka } from 'kafkajs';
-import { kafkaConfig } from '../src/config'
+import {Kafka} from 'kafkajs';
+import {kafkaConfig} from '../src/infrastructure/config';
+import {MessageDTO} from "../src/core/dtos/MessageDTO";
 
 const kafka = new Kafka({
     clientId: kafkaConfig.clientId,
@@ -8,18 +9,8 @@ const kafka = new Kafka({
 
 const producer = kafka.producer();
 
-const sendMessage = async (chatId: string, text: string) => {
+const sendMessage = async (message: MessageDTO) => {
     try {
-        // Подключаемся к продюсеру
-        await producer.connect();
-        console.log('Producer connected');
-
-        // Формируем сообщение
-        const message = {
-            chatId,
-            text,
-        };
-
         // Отправляем сообщение
         await producer.send({
             topic: kafkaConfig.topic,
@@ -33,11 +24,21 @@ const sendMessage = async (chatId: string, text: string) => {
         console.log(`Message sent: ${JSON.stringify(message)}`);
     } catch (error) {
         console.error('Error sending message:', error);
-    } finally {
-        await producer.disconnect();
-        console.log('Producer disconnected');
     }
 };
 
-// Пример отправки сообщения
-sendMessage('2026620172', 'Отправление');
+// Инициализация продюсера и подключение
+const run = async () => {
+    await producer.connect();
+    console.log('Producer connected');
+
+    // Пример отправки сообщения
+    const message = new MessageDTO('tg', 'temirlan200370@gmail.com', 'Молоко убежало', 'У тебя убежало молоко');
+    await sendMessage(message);
+
+    // Отключение продюсера после отправки
+    await producer.disconnect();
+    console.log('Producer disconnected');
+};
+
+run().catch(console.error);

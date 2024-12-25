@@ -17,35 +17,22 @@ export class DatabaseService {
             password: databaseConfig.password,
             database: databaseConfig.database,
             entities: [NotificationEntity, UserEntity],
-            synchronize: true, // Автоматическое создание таблиц при инициализации
+            synchronize: true,
         });
     }
 
     async initialize() {
         try {
-            // Проверяем, существует ли база данных
             const dbExists = await this.checkDatabaseExists();
 
-            // Если база данных не существует, создаем ее
             if (!dbExists) {
                 await this.createDatabase();
                 console.log(`База данных ${databaseConfig.database} создана`);
             }
 
-            // Подключаемся к базе данных
             await this.dataSource.initialize();
             console.log('Database connected');
             console.log('Registered entities:', this.dataSource.entityMetadatas.map(meta => meta.name));
-
-            // const userRepository = this.dataSource.getRepository(UserEntity);
-            //
-            // try {
-            //     const allUsers = await userRepository.find();
-            //     console.log('All users:', allUsers);
-            // } catch (error) {
-            //     console.error('Error retrieving users:', error);
-            // }
-
 
         } catch (error) {
             console.error('Error during database initialization:', error);
@@ -59,7 +46,7 @@ export class DatabaseService {
             port: databaseConfig.port,
             username: databaseConfig.username,
             password: databaseConfig.password,
-            database: 'postgres', // Подключаемся к системной базе данных
+            database: 'postgres',
         });
 
         await connection.initialize();
@@ -68,7 +55,7 @@ export class DatabaseService {
             SELECT 1 FROM pg_database WHERE datname = \$1
         `, [databaseConfig.database]);
 
-        await connection.destroy(); // Закрываем временное соединение
+        await connection.destroy();
         return result.length > 0;
     }
 
@@ -79,7 +66,7 @@ export class DatabaseService {
             port: databaseConfig.port,
             username: databaseConfig.username,
             password: databaseConfig.password,
-            database: 'postgres', // Подключаемся к системной базе данных
+            database: 'postgres',
         });
 
         await connection.initialize();
@@ -87,7 +74,7 @@ export class DatabaseService {
         await connection.query(`
             CREATE DATABASE "${databaseConfig.database}"
         `);
-        await connection.destroy(); // Закрываем временное соединение
+        await connection.destroy();
     }
 
     async saveNotification(email: string, title: string, message: string, status: string, retryCount?: number): Promise<Notification> {
