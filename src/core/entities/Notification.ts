@@ -1,13 +1,15 @@
 export class Notification {
-    email: string;
+    type!: "email" | "tg" | "push";
+    address: string;
     title: string;
     message: string;
-    status: string;
-    retryCount: number;
+    status?: string;
+    retryCount?: number;
 
 
-    constructor(email: string, title: string, message: string, status: string, retryCount: number = 0) {
-        this.email = email;
+    constructor(address: string, title: string, message: string, status?: string, retryCount: number = 0, type: "email" | "tg" | "push" = "tg") {
+        this.type = type;
+        this.address = address;
         this.title = title;
         this.message = message;
         this.status = status;

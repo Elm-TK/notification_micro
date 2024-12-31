@@ -7,6 +7,9 @@ export class NotificationEntity {
     id!: number;
 
     @Column({type: 'varchar'})
+    type!: "email" | "tg" | "push";
+
+    @Column({type: 'varchar'})
     email!: string;
 
     @Column({type: 'varchar'})
@@ -24,15 +27,16 @@ export class NotificationEntity {
 
     static fromNotification(notification: Notification): NotificationEntity {
         const entity = new NotificationEntity();
-        entity.email = notification.email;
+        entity.type = notification.type;
+        entity.email = notification.address;
         entity.title = notification.title;
         entity.message = notification.message;
-        entity.status = notification.status;
-        entity.retryCount = notification.retryCount;
+        entity.status = notification.status!;
+        entity.retryCount = notification.retryCount!;
         return entity;
     }
 
     toNotification(): Notification {
-        return new Notification(this.email, this.title, this.message, this.status, this.retryCount);
+        return new Notification(this.email, this.title, this.message, this.status, this.retryCount, this.type);
     }
 }

@@ -4,6 +4,7 @@ import {NotificationEntity} from "../database/entities/NotificationEntity";
 import {UserEntity} from "../database/entities/UserEntity";
 import {Notification} from "../../core/entities/Notification";
 import {User} from "../../core/entities/User";
+import {PendingGatewayNotificationEntity} from "../database/entities/PendingGatewayNotificationEntity";
 
 export class DatabaseService {
     private dataSource: DataSource;
@@ -16,7 +17,7 @@ export class DatabaseService {
             username: databaseConfig.username,
             password: databaseConfig.password,
             database: databaseConfig.database,
-            entities: [NotificationEntity, UserEntity],
+            entities: [NotificationEntity, UserEntity, PendingGatewayNotificationEntity],
             synchronize: true,
         });
     }
@@ -52,7 +53,7 @@ export class DatabaseService {
         await connection.initialize();
 
         const result = await connection.query(`
-            SELECT 1 FROM pg_database WHERE datname = \$1
+            SELECT 1 FROM pg_database WHERE datname = $1
         `, [databaseConfig.database]);
 
         await connection.destroy();
@@ -77,13 +78,12 @@ export class DatabaseService {
         await connection.destroy();
     }
 
-    async saveNotification(email: string, title: string, message: string, status: string, retryCount?: number): Promise<Notification> {
-        const notification = new Notification(email, title, message, status, retryCount);
+    // Методы работы с уведомлениями
+    async saveNotification(notification: Notification): Promise<void> {
         const notificationEntity = NotificationEntity.fromNotification(notification);
 
         const notificationRepository = this.dataSource.getRepository(NotificationEntity);
         const savedEntity = await notificationRepository.save(notificationEntity);
-        return savedEntity.toNotification();
     }
 
     async getNotifications(): Promise<Notification[]> {
@@ -92,6 +92,87 @@ export class DatabaseService {
         return entities.map(entity => entity.toNotification());
     }
 
+    async getNotificationsByStatus(status: string): Promise<Notification[]> {
+        const notificationRepository = this.dataSource.getRepository(NotificationEntity);
+        const entities = await notificationRepository.find({where: {status}});
+        return entities.map(entity => entity.toNotification());
+    }
+
+    async updateNotification(
+        notification: Notification,
+        updates: { status?: string; retryCount?: number }
+    ): Promise<void> {
+        const notificationRepository = this.dataSource.getRepository(NotificationEntity);
+
+        await notificationRepository.update({
+            type: notification.type,
+            email: notification.address,
+            title: notification.title,
+            message: notification.message,
+            status: notification.status,
+            retryCount: notification.retryCount,
+        }, updates);
+    }
+
+
+    async updateNotificationStatus(id: number, status: string): Promise<void> {
+        const notificationRepository = this.dataSource.getRepository(NotificationEntity);
+        await notificationRepository.update(id, {status});
+    }
+
+    async updateRetryCount(id: number, retryCount: number): Promise<void> {
+        const notificationRepository = this.dataSource.getRepository(NotificationEntity);
+        await notificationRepository.update(id, {retryCount});
+    }
+
+    async deleteNotificationById(id: number): Promise<void> {
+        const notificationRepository = this.dataSource.getRepository(NotificationEntity);
+        await notificationRepository.delete(id);
+    }
+
+    // Методы работы с отложенными уведомлениями
+    async getPendingGatewayNotifications(): Promise<Notification[]> {
+        const pendingRepository = this.dataSource.getRepository(PendingGatewayNotificationEntity);
+        const entities = await pendingRepository.find();
+        return entities.map(entity => entity.toNotification());
+    }
+
+    async savePendingGatewayNotification(notification: Notification): Promise<void> {
+        const pendingRepository = this.dataSource.getRepository(PendingGatewayNotificationEntity);
+        const entity = PendingGatewayNotificationEntity.fromNotification(notification);
+        await pendingRepository.save(entity);
+    }
+
+    async updatePendingGatewayNotificationRetryCount(notification: Notification, retryCount: number): Promise<void> {
+        const pendingRepository = this.dataSource.getRepository(PendingGatewayNotificationEntity);
+        await pendingRepository.update({
+            type: notification.type,
+            email: notification.address,
+            title: notification.title,
+            message: notification.message,
+            status: notification.status,
+            retryCount: notification.retryCount,
+        }, {retryCount});
+    }
+
+    async deletePendingGatewayNotificationById(id: number): Promise<void> {
+        const pendingRepository = this.dataSource.getRepository(PendingGatewayNotificationEntity);
+        await pendingRepository.delete(id);
+    }
+
+    async deletePendingGatewayNotification(notification: Notification): Promise<void> {
+        const notificationRepository = this.dataSource.getRepository(PendingGatewayNotificationEntity);
+        await notificationRepository.delete({
+            type: notification.type,
+            email: notification.address,
+            title: notification.title,
+            message: notification.message,
+            status: notification.status,
+            retryCount: notification.retryCount,
+        });
+    }
+
+    // Методы работы с пользователями
     async saveUser(email: string, chatId: number): Promise<void> {
         const userEntity = UserEntity.fromUser(new User(email, chatId));
         const userRepository = this.dataSource.getRepository(UserEntity);
@@ -114,17 +195,5 @@ export class DatabaseService {
         const userRepository = this.dataSource.getRepository(UserEntity);
         const entity = await userRepository.findOneBy({chatId});
         return entity ? entity.toUser() : null;
-    }
-
-    async getNotificationsByEmail(email: string): Promise<Notification[]> {
-        const notificationRepository = this.dataSource.getRepository(NotificationEntity);
-        const entities = await notificationRepository.findBy({email});
-        return entities.map(entity => entity.toNotification());
-    }
-
-    async getNotificationsByStatus(status: string): Promise<Notification[]> {
-        const notificationRepository = this.dataSource.getRepository(NotificationEntity);
-        const entities = await notificationRepository.findBy({status});
-        return entities.map(entity => entity.toNotification());
     }
 }

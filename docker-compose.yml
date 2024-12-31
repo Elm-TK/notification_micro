@@ -1,0 +1,75 @@
+version: '3.9'
+services:
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification-service
+#    environment:
+#      - KAFKA_BROKER=kafka:9092
+#      - DB_HOST=postgres
+#      - DB_PORT=5432
+#      - DB_USERNAME=postgres
+#      - DB_PASSWORD=etk
+#      - DB_NAME=notifications_db
+#      - GATEWAY_URL=gateway:8080
+#      - TELEGRAM_TOKEN=your_telegram_bot_token
+    depends_on:
+#      - kafka
+      - postgres
+#      - gateway
+    networks:
+      - app-network
+    ports:
+      - '8080:8080'
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: etk
+      POSTGRES_DB: notifications_db
+    ports:
+      - '5433:5432'
+    networks:
+      - app-network
+
+#  kafka:
+#    image: confluentinc/cp-kafka:latest
+#    container_name: kafka
+#    depends_on:
+#      - zookeeper
+#    ports:
+#      - '9092:9092'
+#    environment:
+#      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+#      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+#      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+#      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: '1'
+#    networks:
+#      - app-network
+#
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:latest
+#    container_name: zookeeper
+#    ports:
+#      - '2181:2181'
+#    environment:
+#      ZOOKEEPER_CLIENT_PORT: 2181
+#    networks:
+#      - app-network
+#
+#  gateway:
+#    image: your_gateway_image
+#    container_name: gateway
+#    build:
+#      context: ./gateway
+#    ports:
+#      - '25680:8080'
+#    networks:
+#      - app-network
+
+networks:
+  app-network:
+    driver: bridge

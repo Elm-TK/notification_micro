@@ -33,7 +33,8 @@ const run = async () => {
     console.log('Producer connected');
 
     // Пример отправки сообщения
-    const message = new MessageDTO('tg', 'temirlan200370@gmail.com', 'Молоко убежало', 'У тебя убежало молоко');
+    const message = new MessageDTO('tg', 'AAA@AAA.AA', 'Молоко убежало', 'У тебя убежало молоко');
+
     await sendMessage(message);
 
     // Отключение продюсера после отправки
